@@ -22,7 +22,7 @@ app.use(cors());
 // Parse incoming JSON payloads
 app.use(express.json());
 
-// ==========================================
+// ========================================== 
 // API Routes
 // ==========================================
 
@@ -83,10 +83,18 @@ const startServer = async () => {
     console.warn('Warning: MONGO_URI is not set in .env file. Starting server without DB connection.');
   }
   
-  app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-  });
+  // Only start the Express server if we're not in a serverless environment like Vercel
+  if (process.env.NODE_ENV !== 'production' && !process.env.VERCEL) {
+    app.listen(PORT, () => {
+      console.log(`Server running on port ${PORT}`);
+    });
+  }
 };
 
 // Execute the server start function
 startServer();
+
+/**
+ * Export the Express API for serverless deployment environments like Vercel.
+ */
+module.exports = app;

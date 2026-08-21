@@ -63,6 +63,7 @@ exports.parseSchedule = async (req, res) => {
     }
 
     // Parse the JSON string into an array
+    
     const parsedBlocks = JSON.parse(responseText);
 
     res.json(parsedBlocks);
@@ -72,7 +73,7 @@ exports.parseSchedule = async (req, res) => {
     // Return the actual error so the user knows their API key has issues (e.g. quota limit 0)
     res.status(500).json({ 
       msg: 'Google AI Error: ' + (err.message.includes('429') ? 'API Quota Exceeded (Check Google AI Studio billing/limits)' : err.message) 
-    });
+    }); 
   }
 };
 

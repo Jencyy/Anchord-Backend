@@ -8,6 +8,9 @@ const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const User = require('../models/User');
 const sendEmail = require('../utils/sendEmail');
+const { OAuth2Client } = require('google-auth-library');
+
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 /**
  * @desc    Register a new user
@@ -117,6 +120,64 @@ exports.loginUser = async (req, res) => {
     // Catch and log any server errors during login
     console.error(err.message);
     res.status(500).send('Server error');
+  }
+};
+
+/**
+ * @desc    Authenticate with Google
+ * @route   POST /api/auth/google
+ * @access  Public
+ */
+exports.googleLogin = async (req, res) => {
+  const { credential } = req.body;
+  try {
+    const ticket = await googleClient.verifyIdToken({
+      idToken: credential,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+    
+    const payload = ticket.getPayload();
+    const { email, name } = payload;
+
+    // 1. Check if user exists
+    let user = await User.findOne({ email });
+
+    // 2. If user doesn't exist, create a new one
+    if (!user) {
+      // Generate a highly secure random password since they use Google to login
+      const randomPassword = crypto.randomBytes(32).toString('hex');
+      const salt = await bcrypt.genSalt(10);
+      const hashedPassword = await bcrypt.hash(randomPassword, salt);
+
+      user = new User({
+        name,
+        email,
+        password: hashedPassword,
+        lifeStage: 'Working professional' // Default life stage for Google signups
+      });
+
+      await user.save();
+    }
+
+    // 3. Generate JWT Token
+    const jwtPayload = {
+      user: {
+        id: user.id
+      }
+    };
+
+    jwt.sign(
+      jwtPayload,
+      process.env.JWT_SECRET,
+      { expiresIn: '5 days' },
+      (err, token) => {
+        if (err) throw err;
+        res.json({ token, user: { id: user.id, name: user.name, email: user.email, lifeStage: user.lifeStage } });
+      }
+    );
+  } catch (err) {
+    console.error('Google login error:', err.message);
+    res.status(400).json({ msg: 'Google login failed' });
   }
 };
 

@@ -4,7 +4,7 @@
  */
 const express = require('express');
 // Import the controller functions that handle the actual business logic
-const { registerUser, loginUser, forgotPassword, resetPassword } = require('../controllers/authController');
+const { registerUser, loginUser, forgotPassword, resetPassword, googleLogin } = require('../controllers/authController');
 
 const router = express.Router();
 
@@ -23,6 +23,13 @@ router.post('/register', registerUser);
  * Maps the POST request at the /login path to the loginUser controller.
  */
 router.post('/login', loginUser);
+
+/**
+ * @route   POST /api/auth/google
+ * @desc    Authenticate with Google
+ * @access  Public
+ */
+router.post('/google', googleLogin);
 
 /**
  * @route   POST /api/auth/forgot-password
